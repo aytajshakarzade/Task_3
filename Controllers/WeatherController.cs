@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using Task_3.Data;
 using Task_3.Views;
 
@@ -24,7 +25,25 @@ public class WeatherController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetWeather([FromQuery] string city)
+    [SwaggerOperation(
+        Summary = "Get weather information",
+        Description = "Returns current weather, hourly forecast and weekly forecast for a city."
+    )]
+
+    [SwaggerResponse(200, "Weather data returned successfully")]
+    [SwaggerResponse(400, "City parameter is missing")]
+    [SwaggerResponse(404, "City not found")]
+
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+
+    public async Task<IActionResult> GetWeather(
+        [FromQuery]
+        [SwaggerParameter(
+            Description = "City name",
+            Required = true)]
+        string city)
     {
         if (string.IsNullOrWhiteSpace(city))
         {
@@ -46,10 +65,13 @@ public class WeatherController : ControllerBase
 
         var current =
             await _weatherRepository.FindByCityId(cityEntity.Id);
+
         if (current == null)
         {
             return NotFound(
-                WeatherView.FormatError(404, "Weather data not found"));
+                WeatherView.FormatError(
+                    404,
+                    "Weather data not found"));
         }
 
         var forecast =
